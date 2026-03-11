@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
-import { useOrder, OrderType, PaymentMethod, CustomerInfo, DeliveryAddress } from "../context/OrderContext";
+import { createClient } from "@/lib/supabase/client";
+
+type OrderType = "delivery" | "pickup";
+type PaymentMethod = "card" | "cash";
+
+interface CustomerInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+interface DeliveryAddress {
+  street: string;
+  apartment: string;
+  city: string;
+  zipCode: string;
+  instructions: string;
+}
 
 interface CheckoutProps {
   onClose: () => void;
-  onOrderComplete: () => void;
+  onOrderComplete: (orderNumber: string) => void;
 }
 
 type AuthMode = "guest" | "login";
@@ -14,9 +32,7 @@ type CheckoutStep = "auth" | "details" | "payment";
 
 export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   const { items, totalPrice, clearCart } = useCart();
-  const { createOrder } = useOrder();
 
-  const [authMode, setAuthMode] = useState<AuthMode>("guest");
   const [step, setStep] = useState<CheckoutStep>("auth");
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
@@ -48,20 +64,39 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const deliveryFee = orderType === "delivery" ? 4.99 : 0;
-  const total = totalPrice + deliveryFee;
+  const tax = Math.round(totalPrice * 0.0875 * 100) / 100;
+  const total = totalPrice + deliveryFee + tax;
+
+  // Pre-fill from session if logged in
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user.id)
+        .single<{ full_name: string | null; phone: string | null }>();
+
+      const parts = (profile?.full_name ?? "").split(" ");
+      setCustomer({
+        firstName: parts[0] ?? "",
+        lastName: parts.slice(1).join(" ") ?? "",
+        email: user.email ?? "",
+        phone: profile?.phone ?? "",
+      });
+      setStep("details");
+    });
+  }, []);
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    // Simulate Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setCustomer({
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@gmail.com",
-      phone: "",
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     setIsGoogleLoading(false);
-    setStep("details");
   };
 
   const handleGuestContinue = () => {
@@ -105,25 +140,58 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   };
 
   const handlePlaceOrder = async () => {
-    if (!validatePayment()) return;
-
+    // Skip card validation for now (Stripe comes later)
     setIsProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    createOrder({
-      items,
-      customer,
-      orderType,
-      deliveryAddress: orderType === "delivery" ? address : undefined,
-      paymentMethod,
-      subtotal: totalPrice,
-      deliveryFee,
-      total,
-    });
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: orderType,
+          customer_name: `${customer.firstName} ${customer.lastName}`.trim(),
+          customer_email: customer.email,
+          customer_phone: customer.phone,
+          delivery_address: orderType === "delivery" ? {
+            street: address.street,
+            unit: address.apartment || undefined,
+            city: address.city,
+            state: "",
+            zip: address.zipCode,
+            instructions: address.instructions || undefined,
+          } : null,
+          items: items.map((item) => ({
+            menu_item_id: item.id,
+            item_name: item.name,
+            item_description: item.description,
+            base_price: item.price,
+            quantity: item.quantity,
+            unit_price: item.price,
+            subtotal: item.price * item.quantity,
+          })),
+          subtotal: totalPrice,
+          delivery_fee: deliveryFee,
+          tax,
+          total,
+          payment_method: paymentMethod === "card" ? "stripe" : "cash",
+        }),
+      });
 
-    clearCart();
-    setIsProcessing(false);
-    onOrderComplete();
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrors({ submit: data.error || "Failed to place order" });
+        setIsProcessing(false);
+        return;
+      }
+
+      clearCart();
+      setIsProcessing(false);
+      onOrderComplete(data.order_number);
+    } catch {
+      setErrors({ submit: "Network error. Please try again." });
+      setIsProcessing(false);
+    }
   };
 
   const formatCardNumber = (value: string) => {
@@ -244,9 +312,38 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
             {/* Details Step */}
             {step === "details" && (
               <div className="space-y-8">
-                <div>
-                  <h1 className="text-3xl font-serif mb-2">Delivery Details</h1>
-                  <p className="text-foreground-muted">Where should we send your order?</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-serif mb-2">Delivery Details</h1>
+                    <p className="text-foreground-muted">Where should we send your order?</p>
+                  </div>
+                  {/* Dev test data buttons */}
+                  {process.env.NODE_ENV === "development" && (
+                    <div className="flex gap-2 flex-shrink-0 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomer({ firstName: "Test", lastName: "User", email: "test@example.com", phone: "555-867-5309" });
+                          setOrderType("delivery");
+                          setAddress({ street: "123 Main St", apartment: "Apt 4B", city: "San Francisco", zipCode: "94103", instructions: "Leave at door" });
+                        }}
+                        className="text-xs px-3 py-1.5 border border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary transition-colors"
+                      >
+                        Fill Delivery
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomer({ firstName: "Test", lastName: "User", email: "test@example.com", phone: "555-867-5309" });
+                          setOrderType("pickup");
+                          setAddress({ street: "", apartment: "", city: "", zipCode: "", instructions: "" });
+                        }}
+                        className="text-xs px-3 py-1.5 border border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary transition-colors"
+                      >
+                        Fill Pickup
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Order Type */}
@@ -416,9 +513,32 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
             {/* Payment Step */}
             {step === "payment" && (
               <div className="space-y-8">
-                <div>
-                  <h1 className="text-3xl font-serif mb-2">Payment</h1>
-                  <p className="text-foreground-muted">Choose your payment method</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-serif mb-2">Payment</h1>
+                    <p className="text-foreground-muted">Choose your payment method</p>
+                  </div>
+                  {process.env.NODE_ENV === "development" && (
+                    <div className="flex gap-2 flex-shrink-0 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod("card");
+                          setCardInfo({ number: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", name: "Test User" });
+                        }}
+                        className="text-xs px-3 py-1.5 border border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary transition-colors"
+                      >
+                        Fill Card
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod("cash")}
+                        className="text-xs px-3 py-1.5 border border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary transition-colors"
+                      >
+                        Use Cash
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Payment Method */}
@@ -524,6 +644,10 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       </div>
                     </div>
                   </div>
+                )}
+
+                {errors.submit && (
+                  <p className="text-red-400 text-sm">{errors.submit}</p>
                 )}
 
                 <div className="flex gap-4">

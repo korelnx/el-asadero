@@ -15,77 +15,48 @@ export default function Home() {
         <div className="min-h-screen bg-background">
           <Header />
           <Cart />
-          <main>
+          <main className="pt-20">
             <Hero />
             <Menu />
 
             {/* About Section */}
-            <section id="about" className="py-24 bg-background">
-              <div className="max-w-6xl mx-auto px-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                  {/* Visual */}
-                  <div className="relative">
-                    <div className="aspect-square bg-card border border-border relative">
-                      <div className="absolute inset-6 border border-primary/20" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center space-y-4">
-                          <div className="text-7xl">🌍</div>
-                          <p className="text-foreground-muted text-sm tracking-widest uppercase">
-                            Est. 2015
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Decorative elements */}
-                    <div className="absolute -bottom-6 -right-6 w-24 h-24 border border-primary/30 hidden lg:block" />
-                    <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/5 hidden lg:block" />
+            <section id="about" className="py-24 bg-background scroll-mt-20">
+              <div className="max-w-3xl mx-auto px-6 text-center space-y-8">
+                <div className="space-y-4">
+                  <p className="text-primary font-medium tracking-widest uppercase text-sm">
+                    Our Story
+                  </p>
+                  <h2 className="text-4xl md:text-5xl font-light leading-tight">
+                    A Taste of Home,
+                    <span className="block text-primary">Far From Home</span>
+                  </h2>
+                </div>
+
+                <div className="space-y-4 text-foreground-muted leading-relaxed">
+                  <p>
+                    African Paradise was born from a deep love for the vibrant
+                    cuisines of Africa. Our restaurant brings together the diverse
+                    culinary traditions of the continent under one roof.
+                  </p>
+                  <p>
+                    From hearty stews to fresh juices, each dish we serve is a
+                    celebration of African heritage. We source authentic ingredients
+                    to ensure every bite transports you home.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
+                  <div>
+                    <div className="text-3xl font-light text-primary">52+</div>
+                    <div className="text-sm text-foreground-muted mt-1">Menu Items</div>
                   </div>
-
-                  {/* Content */}
-                  <div className="space-y-8">
-                    <div className="space-y-4">
-                      <p className="text-primary font-medium tracking-widest uppercase text-sm">
-                        Our Story
-                      </p>
-                      <h2 className="text-4xl md:text-5xl font-light leading-tight">
-                        A Taste of Home,
-                        <span className="block text-primary">Far From Home</span>
-                      </h2>
-                    </div>
-
-                    <div className="space-y-4 text-foreground-muted leading-relaxed">
-                      <p>
-                        African Paradise was born from a deep love for the vibrant
-                        cuisines of Africa. Our restaurant brings together the diverse
-                        culinary traditions of the continent under one roof.
-                      </p>
-                      <p>
-                        From hearty stews to fresh juices, each dish we serve is a
-                        celebration of African heritage. We source authentic ingredients
-                        to ensure every bite transports you home.
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
-                      <div>
-                        <div className="text-3xl font-light text-primary">52+</div>
-                        <div className="text-sm text-foreground-muted mt-1">
-                          Menu Items
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-3xl font-light text-primary">3</div>
-                        <div className="text-sm text-foreground-muted mt-1">
-                          Daily Menus
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-3xl font-light text-primary">Fresh</div>
-                        <div className="text-sm text-foreground-muted mt-1">
-                          Daily Made
-                        </div>
-                      </div>
-                    </div>
+                  <div>
+                    <div className="text-3xl font-light text-primary">3</div>
+                    <div className="text-sm text-foreground-muted mt-1">Daily Menus</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-light text-primary">Fresh</div>
+                    <div className="text-sm text-foreground-muted mt-1">Daily Made</div>
                   </div>
                 </div>
               </div>

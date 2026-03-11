@@ -1,7 +1,17 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { MenuItem } from "../data/menu";
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category_id: string;
+  image_url: string | null;
+  is_featured: boolean;
+  tags: string[];
+}
 
 export interface CartItem extends MenuItem {
   quantity: number;
