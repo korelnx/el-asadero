@@ -4,18 +4,26 @@ import { Toaster } from "@/components/ui/sonner";
 import { restaurant } from "@/config/restaurant";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const isDev = process.env.NODE_ENV === "development";
 
-  if (!user) redirect("/login?redirect=/admin/orders");
+  let displayName = "Dev Admin";
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name")
-    .eq("id", user.id)
-    .single<{ role: string; full_name: string }>();
+  if (!isDev) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (profile?.role !== "admin") redirect("/");
+    if (!user) redirect("/login?redirect=/admin/orders");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, full_name")
+      .eq("id", user.id)
+      .single<{ role: string; full_name: string }>();
+
+    if (profile?.role !== "admin") redirect("/");
+
+    displayName = profile?.full_name || user.email || "Admin";
+  }
 
   return (
     <>
@@ -28,7 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="w-7 h-7 border border-primary flex items-center justify-center">
               <span className="text-primary text-xs font-serif">{restaurant.initials}</span>
             </div>
-            <span className="text-sm font-serif tracking-wide">{restaurant.name}</span>
+            <span className="text-sm font-serif tracking-wide">El Asadero</span>
           </a>
         </div>
 
@@ -36,13 +44,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav className="flex-1 px-3 py-4 space-y-1">
           <p className="text-xs text-foreground-muted uppercase tracking-widest px-3 mb-3">Management</p>
           <NavLink href="/admin/orders" icon={<OrdersIcon />} label="Orders" />
+          <NavLink href="/admin/revenue" icon={<RevenueIcon />} label="Revenue" />
           <NavLink href="/admin/menu" icon={<MenuIcon />} label="Menu" />
           <NavLink href="/admin/settings" icon={<SettingsIcon />} label="Settings" />
         </nav>
 
         {/* User */}
         <div className="px-6 py-4 border-t border-border">
-          <p className="text-xs text-foreground-muted truncate">{profile?.full_name || user.email}</p>
+          <p className="text-xs text-foreground-muted truncate">{displayName}</p>
           <a href="/api/auth/signout" className="text-xs text-foreground-muted hover:text-primary transition-colors mt-1 inline-block">
             Sign out
           </a>
@@ -75,6 +84,14 @@ function OrdersIcon() {
   return (
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  );
+}
+
+function RevenueIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
     </svg>
   );
 }

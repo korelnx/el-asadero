@@ -1,22 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0C0A09;
-  --color-background-secondary: #1C1917;
-  --color-foreground: #FAFAF9;
-  --color-foreground-muted: #A8A29E;
-  --color-primary: #D4A574;
-  --color-primary-hover: #C4956A;
-  --color-accent: #B87333;
-  --color-border: #292524;
-  --color-card: #171412;
+  --color-background: #0a0c11;
+  --color-background-secondary: #0f1118;
+  --color-foreground: #F5F5F5;
+  --color-foreground-muted: #9A9A9A;
+  --color-primary: #2AACAA;
+  --color-primary-hover: #229090;
+  --color-accent: #C9522A;
+  --color-accent-hover: #A8421E;
+  --color-border: #1c1e26;
+  --color-card: #13151d;
   --font-serif: var(--font-cormorant);
   --font-sans: var(--font-dm-sans);
 }
 
+/* ── Hero diamond-lattice pattern ─────────────────────────── */
+.hero-pattern {
+  background-image:
+    repeating-linear-gradient( 45deg, transparent 0px, transparent 19px, rgba(42,172,170,0.055) 19px, rgba(42,172,170,0.055) 20px),
+    repeating-linear-gradient(-45deg, transparent 0px, transparent 19px, rgba(42,172,170,0.055) 19px, rgba(42,172,170,0.055) 20px);
+}
+
 body {
-  background: #0C0A09;
-  color: #FAFAF9;
+  background: #0a0c11;
+  color: #F5F5F5;
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
@@ -33,15 +41,15 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #292524;
+  background: #163540;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #44403c;
+  background: #1C4A52;
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: #292524 transparent;
+  scrollbar-color: #163540 transparent;
 }
 
 /* ── Sheet slide-in ───────────────────────────────────────── */

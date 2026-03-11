@@ -1,22 +1,46 @@
+export const locations = [
+  {
+    id: "reynoldsburg",
+    name: "Reynoldsburg",
+    address: "6005 Gender Rd, Reynoldsburg, OH 43068",
+    phone: "(614) 626-0051",
+    hours: "Mon–Thu 11am–10pm · Fri–Sat 11am–11pm · Sun 12pm–9pm",
+  },
+  {
+    id: "columbus",
+    name: "Columbus",
+    address: "1234 High St, Columbus, OH 43215",
+    phone: "(614) 555-0199",
+    hours: "Mon–Thu 11am–10pm · Fri–Sat 11am–11pm · Sun 12pm–9pm",
+  },
+  {
+    id: "gahanna",
+    name: "Gahanna",
+    address: "890 Morse Rd, Gahanna, OH 43230",
+    phone: "(614) 555-0177",
+    hours: "Mon–Sun 11am–10pm",
+  },
+];
+
 export const restaurant = {
-  name: "African Paradise",
-  initials: "AP",
-  tagline: "Authentic African Cuisine",
-  description: "Bringing the authentic flavors of Africa to your table. Every dish is a celebration of heritage and tradition.",
+  name: "El Asadero Reynoldsburg",
+  initials: "EA",
+  tagline: "Authentic Mexican Cuisine",
+  description: "Serving bold, authentic Mexican flavors in Reynoldsburg, OH. From sizzling fajitas to fresh ceviches, every dish is made with passion and tradition.",
 
   address: {
-    street: "123 Savanna Street",
-    city: "City Center",
-    state: "CA",
-    zip: "90210",
-    full: "123 Savanna Street, City Center, CA 90210",
-    line1: "123 Savanna Street",
-    line2: "City Center, CA 90210",
+    street: "",
+    city: "Reynoldsburg",
+    state: "OH",
+    zip: "",
+    full: "Reynoldsburg, OH",
+    line1: "Reynoldsburg, OH",
+    line2: "",
   },
 
-  phone: "(555) 123-4567",
-  phoneRaw: "5551234567",
-  email: "hello@africanparadise.com",
+  phone: "(614) 626-0051",
+  phoneRaw: "6146260051",
+  email: "info@elasaderoreynoldsburg.com",
 
   hours: [
     { days: "Mon - Thu", hours: "11am - 10pm" },
@@ -25,35 +49,35 @@ export const restaurant = {
   ],
 
   hero: {
-    headline: "A Journey Through",
-    headlineAccent: "African Flavors",
+    headline: "Discover Our Authentic",
+    headlineAccent: "Mexican Flavors",
     subheading:
-      "Experience the rich culinary heritage of Africa. From the aromatic spices of Ethiopia to the bold flavors of West Africa, every dish tells a story of tradition and passion.",
+      "From sizzling fajitas and birria to fresh seafood and hand-crafted cocktails — El Asadero brings the heart of Mexico straight to Reynoldsburg.",
     stats: [
-      { value: "15+",  label: "African Countries" },
-      { value: "50+",  label: "Signature Dishes"  },
-      { value: "10k+", label: "Happy Guests"       },
+      { value: "20+",   label: "Menu Categories"  },
+      { value: "150+",  label: "Signature Dishes"  },
+      { value: "Fresh", label: "Made Daily"         },
     ],
   },
 
   about: {
-    headline: "A Taste of Home,",
-    headlineAccent: "Far From Home",
+    headline: "Real Flavors,",
+    headlineAccent: "Real Tradition",
     body: [
-      "African Paradise was born from a deep love for the vibrant cuisines of Africa. Our restaurant brings together the diverse culinary traditions of the continent under one roof.",
-      "From hearty stews to fresh juices, each dish we serve is a celebration of African heritage. We source authentic ingredients to ensure every bite transports you home.",
+      "El Asadero was born from a deep love for authentic Mexican cuisine. We bring together regional recipes — from Jalisco fajitas and Veracruz seafood to Oaxacan mole — all under one roof in Reynoldsburg.",
+      "Every dish is crafted with fresh ingredients and time-honored techniques. Whether you're here for a quick lunch or a full parrillada with the family, we make every visit memorable.",
     ],
     stats: [
-      { value: "52+",   label: "Menu Items"  },
-      { value: "3",     label: "Daily Menus" },
-      { value: "Fresh", label: "Daily Made"  },
+      { value: "150+",  label: "Menu Items"    },
+      { value: "20+",   label: "Categories"    },
+      { value: "Fresh", label: "Made Daily"    },
     ],
   },
 
   cta: {
     headline: "Ready to Experience",
-    headlineAccent: "African Cuisine?",
-    subheading: "Order online for delivery or pickup. Fresh, authentic dishes ready in minutes.",
+    headlineAccent: "El Asadero?",
+    subheading: "Order online for pickup or give us a call. Fresh, authentic Mexican dishes ready for you.",
   },
 
   social: {
@@ -62,5 +86,5 @@ export const restaurant = {
     twitter:   "#",
   },
 
-  copyright: "2024 African Paradise",
+  copyright: "2024 El Asadero Reynoldsburg",
 };

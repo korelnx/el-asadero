@@ -15,8 +15,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "African Paradise | Authentic African Cuisine",
-  description: "Experience the rich flavors of Africa. Order authentic African dishes for delivery or pickup.",
+  title: "El Asadero Reynoldsburg | Authentic Mexican Cuisine",
+  description: "Discover authentic Mexican flavors in Reynoldsburg, OH. From sizzling fajitas to fresh seafood — dine-in, takeout, and delivery.",
 };
 
 export default function RootLayout({

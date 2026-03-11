@@ -624,10 +624,13 @@ function ConfirmModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const IS_DEV = !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL === "https://placeholder.supabase.co";
+
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!IS_DEV);
   const [selectedCatId, setSelectedCatId] = useState<string | "all">("all");
 
   const [categoryModal, setCategoryModal] = useState<{ mode: "new" | "edit"; data: Partial<Category> } | null>(null);
@@ -641,6 +644,7 @@ export default function MenuPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (IS_DEV) return;
     const res = await fetch("/api/admin/menu");
     if (!res.ok) { setLoading(false); return; }
     const { categories: cats, items: its } = await res.json();
@@ -742,6 +746,12 @@ export default function MenuPage() {
 
   return (
     <div className="flex flex-col h-screen">
+      {IS_DEV && (
+        <div className="flex-shrink-0 px-8 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+          Dev mode — Supabase not connected. No data will load.
+        </div>
+      )}
       {/* Header */}
       <div className="flex-shrink-0 h-16 border-b border-border flex items-center justify-between px-8">
         <h1 className="text-lg font-serif">Menu</h1>

@@ -1,15 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "../context/CartContext";
+import { useLocation } from "../context/LocationContext";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { restaurant } from "@/config/restaurant";
+import { restaurant, locations } from "@/config/restaurant";
 
 export default function Header() {
   const { totalItems, setIsOpen } = useCart();
+  const { selected, setSelected } = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [locOpen, setLocOpen] = useState(false);
+  const locRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (locRef.current && !locRef.current.contains(e.target as Node)) setLocOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,13 +60,9 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 border border-primary flex items-center justify-center">
-              <span className="text-primary text-lg font-serif">{restaurant.initials}</span>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-serif tracking-wide">{restaurant.name}</h1>
-            </div>
+          <a href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/elasedro-logo.png" alt={restaurant.name} className="h-12 w-auto" />
           </a>
 
           {/* Navigation */}
@@ -69,6 +77,41 @@ export default function Header() {
               Contact
             </a>
           </nav>
+
+          {/* Location picker */}
+          <div ref={locRef} className="relative hidden md:block">
+            <button
+              onClick={() => setLocOpen(v => !v)}
+              className="flex items-center gap-1.5 text-sm text-foreground-muted hover:text-foreground transition-colors"
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              <span>{selected ? selected.name : "Select Location"}</span>
+              <svg className={`w-3 h-3 transition-transform ${locOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {locOpen && (
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-card border border-border shadow-2xl z-50">
+                <p className="text-xs text-foreground-muted uppercase tracking-widest px-4 pt-3 pb-2">Select Location</p>
+                {locations.map(loc => (
+                  <button
+                    key={loc.id}
+                    onClick={() => { setSelected(loc); setLocOpen(false); }}
+                    className={`w-full text-left px-4 py-3 transition-colors border-t border-border first:border-t-0 ${
+                      selected?.id === loc.id ? "text-primary bg-primary/5" : "text-foreground hover:bg-card/80"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">{loc.name}</p>
+                    <p className="text-xs text-foreground-muted mt-0.5 truncate">{loc.address}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-3">

@@ -62,10 +62,13 @@ const FILTER_TABS: { label: string; value: OrderStatus | "all" }[] = [
 
 const ACTIVE_STATUSES: OrderStatus[] = ["new", "in_progress", "ready"];
 
+const IS_DEV = !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL === "https://placeholder.supabase.co";
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "all">("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!IS_DEV);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
@@ -73,6 +76,7 @@ export default function OrdersPage() {
   const supabase = createClient();
 
   const fetchOrders = useCallback(async () => {
+    if (IS_DEV) return;
     const res = await fetch("/api/admin/orders");
     if (!res.ok) {
       const { error } = await res.json();
@@ -84,7 +88,6 @@ export default function OrdersPage() {
     setOrders(prev => {
       const prevIds = new Set(prev.map((o: Order) => o.id));
       const incoming = data.map((o: any) => ({ ...o, items: o.order_items ?? [] }));
-      // Track which are new for the flash effect
       const fresh = incoming.filter((o: Order) => !prevIds.has(o.id)).map((o: Order) => o.id);
       if (fresh.length) {
         setNewOrderIds(ids => new Set([...ids, ...fresh]));
@@ -100,6 +103,7 @@ export default function OrdersPage() {
   }, []);
 
   useEffect(() => {
+    if (IS_DEV) return;
     fetchOrders();
     const channel = supabase
       .channel("orders-realtime")
@@ -141,6 +145,12 @@ export default function OrdersPage() {
 
   return (
     <div className="flex flex-col h-screen">
+      {IS_DEV && (
+        <div className="flex-shrink-0 px-8 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+          Dev mode — Supabase not connected. No data will load.
+        </div>
+      )}
       {/* Header */}
       <div className="flex-shrink-0 h-16 border-b border-border flex items-center justify-between px-8">
         <div className="flex items-center gap-3">

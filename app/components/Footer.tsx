@@ -14,7 +14,7 @@ export default function Footer() {
               </div>
               <span className="text-lg font-serif">{name}</span>
             </div>
-            <p className="text-foreground-muted text-sm leading-relaxed">
+            <p className="text-foreground/60 text-sm leading-relaxed">
               {description}
             </p>
           </div>
@@ -24,22 +24,22 @@ export default function Footer() {
             <h4 className="font-serif text-lg mb-6">Navigate</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#menu" className="text-foreground-muted hover:text-primary transition-colors text-sm">
+                <a href="#menu" className="text-foreground/60 hover:text-foreground transition-colors text-sm">
                   Menu
                 </a>
               </li>
               <li>
-                <a href="#about" className="text-foreground-muted hover:text-primary transition-colors text-sm">
+                <a href="#about" className="text-foreground/60 hover:text-foreground transition-colors text-sm">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-foreground-muted hover:text-primary transition-colors text-sm">
+                <a href="#" className="text-foreground/60 hover:text-foreground transition-colors text-sm">
                   Catering
                 </a>
               </li>
               <li>
-                <a href="#" className="text-foreground-muted hover:text-primary transition-colors text-sm">
+                <a href="#" className="text-foreground/60 hover:text-foreground transition-colors text-sm">
                   Gift Cards
                 </a>
               </li>
@@ -115,7 +115,7 @@ export default function Footer() {
             <h4 className="font-serif text-lg mb-6">Hours</h4>
             <ul className="space-y-3 text-sm">
               {hours.map((h) => (
-                <li key={h.days} className="flex justify-between text-foreground-muted">
+                <li key={h.days} className="flex justify-between text-foreground/60">
                   <span>{h.days}</span>
                   <span>{h.hours}</span>
                 </li>
@@ -156,7 +156,7 @@ export default function Footer() {
       {/* Bottom Bar */}
       <div className="border-t border-border">
         <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-foreground-muted">
+          <p className="text-sm text-foreground/50">
             &copy; {copyright}. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-foreground-muted">

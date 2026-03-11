@@ -1,14 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCart, type MenuItem } from "../context/CartContext";
-
-interface Category {
-  id: string;
-  name: string;
-  description: string | null;
-  display_order: number;
-}
+import { CATEGORIES, MENU_ITEMS } from "@/config/menu";
 
 function MenuCard({ item }: { item: MenuItem }) {
   const { addItem } = useCart();
@@ -24,12 +18,8 @@ function MenuCard({ item }: { item: MenuItem }) {
         />
       ) : (
         <div className="w-full h-36 border-b border-border bg-card flex items-center justify-center">
-          <div className="flex flex-col items-center gap-1.5 opacity-20">
-            <div className="w-8 h-8 border border-primary flex items-center justify-center">
-              <span className="text-primary text-xs font-serif">AP</span>
-            </div>
-            <span className="text-primary text-xs font-serif tracking-widest uppercase">African Paradise</span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/elasedro-logo.png" alt="El Asadero" className="h-10 w-auto opacity-20" />
         </div>
       )}
       <div className="p-5 space-y-3">
@@ -37,7 +27,7 @@ function MenuCard({ item }: { item: MenuItem }) {
           <div className="min-w-0">
             <h3 className="font-serif text-lg leading-snug">{item.name}</h3>
             {item.is_featured && (
-              <span className="text-xs text-primary font-medium tracking-wide">Featured</span>
+              <span className="text-xs text-accent font-medium tracking-wide">Featured</span>
             )}
           </div>
           <span className="text-primary font-medium whitespace-nowrap">
@@ -84,27 +74,10 @@ function MenuCard({ item }: { item: MenuItem }) {
 }
 
 export default function Menu() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(CATEGORIES[0].id);
 
-  useEffect(() => {
-    fetch("/api/menu", { cache: "no-store" })
-      .then(res => res.json())
-      .then(({ categories: cats, items: its, error: err }) => {
-        if (err) { setError(err); return; }
-        setCategories(cats ?? []);
-        setItems(its ?? []);
-        if (cats?.length) setActiveCategory(cats[0].id);
-      })
-      .catch(() => setError("Failed to load menu"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filteredItems = items.filter(item => item.category_id === activeCategory);
-  const activeCat = categories.find(c => c.id === activeCategory);
+  const filteredItems = MENU_ITEMS.filter(item => item.category_id === activeCategory);
+  const activeCat = CATEGORIES.find(c => c.id === activeCategory);
 
   return (
     <section id="menu" className="py-24 bg-background-secondary scroll-mt-20">
@@ -115,60 +88,46 @@ export default function Menu() {
             Our Menu
           </p>
           <h2 className="text-4xl md:text-5xl font-light">
-            All Day Dining
+            Fresh Every Day
           </h2>
-          <p className="text-foreground-muted max-w-xl mx-auto">
-            Fresh, authentic dishes made with love. Available for dine-in, takeout, and delivery.
+          <p className="text-foreground/60 max-w-xl mx-auto">
+            Authentic Mexican dishes made with fresh ingredients. Available for dine-in, takeout, and delivery.
           </p>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24 gap-3 text-foreground-muted">
-            <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Loading menu…
+        {/* Category Tabs */}
+        <div className="flex flex-wrap justify-center gap-2 mb-16">
+          {CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setActiveCategory(category.id)}
+              className={`px-6 py-3 text-sm transition-all ${
+                activeCategory === category.id
+                  ? "bg-primary text-background"
+                  : "border border-border text-foreground-muted hover:border-primary hover:text-foreground"
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Category Description */}
+        {activeCat?.description && (
+          <div className="text-center mb-8">
+            <p className="text-foreground-muted">{activeCat.description}</p>
           </div>
-        ) : error ? (
-          <p className="text-center text-foreground-muted py-16">{error}</p>
+        )}
+
+        {/* Menu Grid */}
+        {filteredItems.length === 0 ? (
+          <p className="text-center text-foreground-muted py-12">No items in this category.</p>
         ) : (
-          <>
-            {/* Category Tabs */}
-            <div className="flex flex-wrap justify-center gap-2 mb-16">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`px-6 py-3 text-sm transition-all ${
-                    activeCategory === category.id
-                      ? "bg-primary text-background"
-                      : "border border-border text-foreground-muted hover:border-primary hover:text-foreground"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-
-            {/* Category Description */}
-            {activeCat?.description && (
-              <div className="text-center mb-8">
-                <p className="text-foreground-muted">{activeCat.description}</p>
-              </div>
-            )}
-
-            {/* Menu Grid */}
-            {filteredItems.length === 0 ? (
-              <p className="text-center text-foreground-muted py-12">No items available in this category.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <MenuCard key={item.id} item={item} />
-                ))}
-              </div>
-            )}
-          </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredItems.map((item) => (
+              <MenuCard key={item.id} item={item} />
+            ))}
+          </div>
         )}
       </div>
     </section>
