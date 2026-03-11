@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
+import { restaurant } from "@/config/restaurant";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -25,9 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="h-16 flex items-center px-6 border-b border-border">
           <a href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 border border-primary flex items-center justify-center">
-              <span className="text-primary text-xs font-serif">AP</span>
+              <span className="text-primary text-xs font-serif">{restaurant.initials}</span>
             </div>
-            <span className="text-sm font-serif tracking-wide">African Paradise</span>
+            <span className="text-sm font-serif tracking-wide">{restaurant.name}</span>
           </a>
         </div>
 

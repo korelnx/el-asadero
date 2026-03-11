@@ -1,20 +1,21 @@
+import { restaurant } from "@/config/restaurant";
+
 export default function Hero() {
+  const { tagline, hero } = restaurant;
   return (
     <section className="min-h-screen flex items-center bg-background">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <div className="space-y-8">
           <div className="space-y-6">
             <p className="text-primary font-medium tracking-widest uppercase text-sm">
-              Authentic African Cuisine
+              {tagline}
             </p>
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-light leading-[1.1] tracking-tight">
-              A Journey Through
-              <span className="block text-primary">African Flavors</span>
+              {hero.headline}
+              <span className="block text-primary">{hero.headlineAccent}</span>
             </h1>
             <p className="text-foreground-muted text-lg leading-relaxed mx-auto max-w-xl">
-              Experience the rich culinary heritage of Africa. From the aromatic
-              spices of Ethiopia to the bold flavors of West Africa, every dish
-              tells a story of tradition and passion.
+              {hero.subheading}
             </p>
           </div>
 
@@ -34,18 +35,12 @@ export default function Hero() {
           </div>
 
           <div className="flex gap-12 pt-8 border-t border-border justify-center">
-            <div>
-              <div className="text-3xl font-light text-primary">15+</div>
-              <div className="text-sm text-foreground-muted mt-1">African Countries</div>
-            </div>
-            <div>
-              <div className="text-3xl font-light text-primary">50+</div>
-              <div className="text-sm text-foreground-muted mt-1">Signature Dishes</div>
-            </div>
-            <div>
-              <div className="text-3xl font-light text-primary">10k+</div>
-              <div className="text-sm text-foreground-muted mt-1">Happy Guests</div>
-            </div>
+            {hero.stats.map((stat) => (
+              <div key={stat.label}>
+                <div className="text-3xl font-light text-primary">{stat.value}</div>
+                <div className="text-sm text-foreground-muted mt-1">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

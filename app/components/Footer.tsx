@@ -1,4 +1,7 @@
+import { restaurant } from "@/config/restaurant";
+
 export default function Footer() {
+  const { name, initials, description, address, phone, email, hours, social, copyright } = restaurant;
   return (
     <footer id="contact" className="bg-card border-t border-border">
       <div className="max-w-6xl mx-auto px-6 py-20">
@@ -7,13 +10,12 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 border border-primary flex items-center justify-center">
-                <span className="text-primary text-lg font-serif">AP</span>
+                <span className="text-primary text-lg font-serif">{initials}</span>
               </div>
-              <span className="text-lg font-serif">African Paradise</span>
+              <span className="text-lg font-serif">{name}</span>
             </div>
             <p className="text-foreground-muted text-sm leading-relaxed">
-              Bringing the authentic flavors of Africa to your table.
-              Every dish is a celebration of heritage and tradition.
+              {description}
             </p>
           </div>
 
@@ -69,7 +71,7 @@ export default function Footer() {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <span>123 Savanna Street<br />City Center, CA 90210</span>
+                <span>{address.line1}<br />{address.line2}</span>
               </li>
               <li className="flex items-center gap-3">
                 <svg
@@ -86,7 +88,7 @@ export default function Footer() {
                     d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                   />
                 </svg>
-                <span>(555) 123-4567</span>
+                <span>{phone}</span>
               </li>
               <li className="flex items-center gap-3">
                 <svg
@@ -103,7 +105,7 @@ export default function Footer() {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                <span>hello@africanparadise.com</span>
+                <span>{email}</span>
               </li>
             </ul>
           </div>
@@ -112,24 +114,18 @@ export default function Footer() {
           <div>
             <h4 className="font-serif text-lg mb-6">Hours</h4>
             <ul className="space-y-3 text-sm">
-              <li className="flex justify-between text-foreground-muted">
-                <span>Mon - Thu</span>
-                <span>11am - 10pm</span>
-              </li>
-              <li className="flex justify-between text-foreground-muted">
-                <span>Fri - Sat</span>
-                <span>11am - 11pm</span>
-              </li>
-              <li className="flex justify-between text-foreground-muted">
-                <span>Sunday</span>
-                <span>12pm - 9pm</span>
-              </li>
+              {hours.map((h) => (
+                <li key={h.days} className="flex justify-between text-foreground-muted">
+                  <span>{h.days}</span>
+                  <span>{h.hours}</span>
+                </li>
+              ))}
             </ul>
 
             {/* Social Links */}
             <div className="flex gap-3 mt-8">
               <a
-                href="#"
+                href={social.facebook}
                 className="w-10 h-10 border border-border hover:border-primary flex items-center justify-center transition-colors group"
               >
                 <svg className="w-4 h-4 text-foreground-muted group-hover:text-primary transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -137,7 +133,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href={social.instagram}
                 className="w-10 h-10 border border-border hover:border-primary flex items-center justify-center transition-colors group"
               >
                 <svg className="w-4 h-4 text-foreground-muted group-hover:text-primary transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -145,7 +141,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href={social.twitter}
                 className="w-10 h-10 border border-border hover:border-primary flex items-center justify-center transition-colors group"
               >
                 <svg className="w-4 h-4 text-foreground-muted group-hover:text-primary transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -161,7 +157,7 @@ export default function Footer() {
       <div className="border-t border-border">
         <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-foreground-muted">
-            &copy; 2024 African Paradise. All rights reserved.
+            &copy; {copyright}. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-foreground-muted">
             <a href="#" className="hover:text-primary transition-colors">Privacy</a>

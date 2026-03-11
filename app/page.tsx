@@ -7,8 +7,10 @@ import Hero from "./components/Hero";
 import Menu from "./components/Menu";
 import Cart from "./components/Cart";
 import Footer from "./components/Footer";
+import { restaurant } from "@/config/restaurant";
 
 export default function Home() {
+  const { about, cta, phone, phoneRaw } = restaurant;
   return (
     <CartProvider>
       <OrderProvider>
@@ -27,37 +29,22 @@ export default function Home() {
                     Our Story
                   </p>
                   <h2 className="text-4xl md:text-5xl font-light leading-tight">
-                    A Taste of Home,
-                    <span className="block text-primary">Far From Home</span>
+                    {about.headline}
+                    <span className="block text-primary">{about.headlineAccent}</span>
                   </h2>
                 </div>
 
                 <div className="space-y-4 text-foreground-muted leading-relaxed">
-                  <p>
-                    African Paradise was born from a deep love for the vibrant
-                    cuisines of Africa. Our restaurant brings together the diverse
-                    culinary traditions of the continent under one roof.
-                  </p>
-                  <p>
-                    From hearty stews to fresh juices, each dish we serve is a
-                    celebration of African heritage. We source authentic ingredients
-                    to ensure every bite transports you home.
-                  </p>
+                  {about.body.map((p, i) => <p key={i}>{p}</p>)}
                 </div>
 
                 <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
-                  <div>
-                    <div className="text-3xl font-light text-primary">52+</div>
-                    <div className="text-sm text-foreground-muted mt-1">Menu Items</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-light text-primary">3</div>
-                    <div className="text-sm text-foreground-muted mt-1">Daily Menus</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-light text-primary">Fresh</div>
-                    <div className="text-sm text-foreground-muted mt-1">Daily Made</div>
-                  </div>
+                  {about.stats.map((s) => (
+                    <div key={s.label}>
+                      <div className="text-3xl font-light text-primary">{s.value}</div>
+                      <div className="text-sm text-foreground-muted mt-1">{s.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
@@ -66,12 +53,11 @@ export default function Home() {
             <section className="py-24 bg-card border-y border-border">
               <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
                 <h2 className="text-4xl md:text-5xl font-light">
-                  Ready to Experience
-                  <span className="block text-primary">African Cuisine?</span>
+                  {cta.headline}
+                  <span className="block text-primary">{cta.headlineAccent}</span>
                 </h2>
                 <p className="text-foreground-muted max-w-xl mx-auto">
-                  Order online for delivery or pickup. Fresh, authentic dishes
-                  ready in minutes.
+                  {cta.subheading}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <a
@@ -81,10 +67,10 @@ export default function Home() {
                     Order Now
                   </a>
                   <a
-                    href="tel:5551234567"
+                    href={`tel:${phoneRaw}`}
                     className="inline-flex items-center justify-center px-8 py-4 border border-border text-foreground font-medium hover:border-primary transition-colors"
                   >
-                    Call (555) 123-4567
+                    Call {phone}
                   </a>
                 </div>
               </div>

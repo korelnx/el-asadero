@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { restaurant } from "@/config/restaurant";
 
 export default function Header() {
   const { totalItems, setIsOpen } = useCart();
@@ -49,10 +50,10 @@ export default function Header() {
           {/* Logo */}
           <a href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 border border-primary flex items-center justify-center">
-              <span className="text-primary text-lg font-serif">AP</span>
+              <span className="text-primary text-lg font-serif">{restaurant.initials}</span>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-serif tracking-wide">African Paradise</h1>
+              <h1 className="text-lg font-serif tracking-wide">{restaurant.name}</h1>
             </div>
           </a>
 

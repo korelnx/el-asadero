@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
 import { createClient } from "@/lib/supabase/client";
+import { restaurant } from "@/config/restaurant";
 
 type OrderType = "delivery" | "pickup";
 type PaymentMethod = "card" | "cash";
@@ -231,7 +232,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
             <div className="w-8 h-8 border border-primary flex items-center justify-center">
               <span className="text-primary text-sm font-serif">AP</span>
             </div>
-            <span className="font-serif hidden sm:block">African Paradise</span>
+            <span className="font-serif hidden sm:block">{restaurant.name}</span>
           </div>
         </div>
       </header>
@@ -490,9 +491,9 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">African Paradise</p>
-                        <p className="text-foreground-muted">123 Savanna Street</p>
-                        <p className="text-foreground-muted">City Center, CA 90210</p>
+                        <p className="font-medium">{restaurant.name}</p>
+                        <p className="text-foreground-muted">{restaurant.address.line1}</p>
+                        <p className="text-foreground-muted">{restaurant.address.line2}</p>
                         <p className="text-primary mt-2">Ready in 15-20 minutes</p>
                       </div>
                     </div>
