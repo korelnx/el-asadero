@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useCart, type MenuItem } from "../context/CartContext";
 import { CATEGORIES, MENU_ITEMS } from "@/config/menu";
+import ItemModal from "./ItemModal";
 
-function MenuCard({ item }: { item: MenuItem }) {
-  const { addItem } = useCart();
-
+function MenuCard({ item, onCustomize }: { item: MenuItem; onCustomize: (item: MenuItem) => void }) {
   return (
     <div className="group bg-card border border-border hover:border-primary/30 transition-all">
       {item.image_url ? (
@@ -41,7 +40,7 @@ function MenuCard({ item }: { item: MenuItem }) {
         )}
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {item.tags.map(tag => (
+            {item.tags.map((tag) => (
               <span key={tag} className="text-xs px-2 py-0.5 bg-primary/10 text-primary/80 rounded-sm">
                 {tag}
               </span>
@@ -49,7 +48,7 @@ function MenuCard({ item }: { item: MenuItem }) {
           </div>
         )}
         <button
-          onClick={() => addItem(item)}
+          onClick={() => onCustomize(item)}
           className="w-full border border-border hover:border-primary hover:bg-primary hover:text-background py-2.5 text-sm font-medium transition-all flex items-center justify-center gap-2"
         >
           <svg
@@ -75,61 +74,70 @@ function MenuCard({ item }: { item: MenuItem }) {
 
 export default function Menu() {
   const [activeCategory, setActiveCategory] = useState<string>(CATEGORIES[0].id);
+  const [modalItem, setModalItem] = useState<MenuItem | null>(null);
+  const { addItem } = useCart();
 
-  const filteredItems = MENU_ITEMS.filter(item => item.category_id === activeCategory);
-  const activeCat = CATEGORIES.find(c => c.id === activeCategory);
+  const filteredItems = MENU_ITEMS.filter((item) => item.category_id === activeCategory);
+  const activeCat = CATEGORIES.find((c) => c.id === activeCategory);
 
   return (
-    <section id="menu" className="py-24 bg-background-secondary scroll-mt-20">
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Section Header */}
-        <div className="text-center mb-16 space-y-4">
-          <p className="text-primary font-medium tracking-widest uppercase text-sm">
-            Our Menu
-          </p>
-          <h2 className="text-4xl md:text-5xl font-light">
-            Fresh Every Day
-          </h2>
-          <p className="text-foreground/60 max-w-xl mx-auto">
-            Authentic Mexican dishes made with fresh ingredients. Available for dine-in, takeout, and delivery.
-          </p>
-        </div>
-
-        {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 mb-16">
-          {CATEGORIES.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              className={`px-6 py-3 text-sm transition-all ${
-                activeCategory === category.id
-                  ? "bg-primary text-background"
-                  : "border border-border text-foreground-muted hover:border-primary hover:text-foreground"
-              }`}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Category Description */}
-        {activeCat?.description && (
-          <div className="text-center mb-8">
-            <p className="text-foreground-muted">{activeCat.description}</p>
+    <>
+      <section id="menu" className="py-16 sm:py-24 bg-background-secondary scroll-mt-16 sm:scroll-mt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10 sm:mb-16 space-y-4">
+            <p className="text-primary font-medium tracking-widest uppercase text-sm">
+              Our Menu
+            </p>
+            <h2 className="text-4xl md:text-5xl font-light">Fresh Every Day</h2>
+            <p className="text-foreground/60 max-w-xl mx-auto">
+              Authentic Mexican dishes made with fresh ingredients. Available for dine-in, takeout, and delivery.
+            </p>
           </div>
-        )}
 
-        {/* Menu Grid */}
-        {filteredItems.length === 0 ? (
-          <p className="text-center text-foreground-muted py-12">No items in this category.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredItems.map((item) => (
-              <MenuCard key={item.id} item={item} />
+          <div className="flex flex-wrap justify-center gap-2 mb-10 sm:mb-16">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`px-3 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm transition-all ${
+                  activeCategory === category.id
+                    ? "bg-primary text-background"
+                    : "border border-border text-foreground-muted hover:border-primary hover:text-foreground"
+                }`}
+              >
+                {category.name}
+              </button>
             ))}
           </div>
-        )}
-      </div>
-    </section>
+
+          {activeCat?.description && (
+            <div className="text-center mb-8">
+              <p className="text-foreground-muted">{activeCat.description}</p>
+            </div>
+          )}
+
+          {filteredItems.length === 0 ? (
+            <p className="text-center text-foreground-muted py-12">No items in this category.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredItems.map((item) => (
+                <MenuCard key={item.id} item={item} onCustomize={setModalItem} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {modalItem && (
+        <ItemModal
+          item={modalItem}
+          onClose={() => setModalItem(null)}
+          onAdd={(item, modifiers, specialInstructions) => {
+            addItem(item, modifiers, specialInstructions);
+            setModalItem(null);
+          }}
+        />
+      )}
+    </>
   );
 }

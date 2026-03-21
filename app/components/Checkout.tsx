@@ -71,6 +71,14 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<{ min_order_delivery: number; min_order_pickup: number } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => setSettings(data))
+      .catch(() => null);
+  }, []);
 
   const deliveryFee = orderType === "delivery" ? 4.99 : 0;
   const tax = Math.round(totalPrice * 0.0875 * 100) / 100;
@@ -128,6 +136,14 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
       if (!address.zipCode.trim()) newErrors.zipCode = "Required";
     }
 
+    // Minimum order validation
+    if (settings) {
+      const min = orderType === "delivery" ? settings.min_order_delivery : settings.min_order_pickup;
+      if (min > 0 && totalPrice < min) {
+        newErrors.minOrder = `Minimum order for ${orderType} is $${min.toFixed(2)}. Add $${(min - totalPrice).toFixed(2)} more.`;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -176,8 +192,10 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
             item_description: item.description,
             base_price: item.price,
             quantity: item.quantity,
-            unit_price: item.price,
-            subtotal: item.price * item.quantity,
+            unit_price: item.unit_price,
+            subtotal: item.unit_price * item.quantity,
+            special_instructions: item.special_instructions || undefined,
+            modifiers: item.modifiers.length > 0 ? item.modifiers : undefined,
           })),
           subtotal: totalPrice,
           delivery_fee: deliveryFee,
@@ -246,7 +264,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="grid lg:grid-cols-5 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
@@ -427,7 +445,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                 </div>
 
                 {/* Order Type */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => setOrderType("delivery")}
                     className={`p-6 border text-left transition-all ${
@@ -462,7 +480,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                 {/* Contact Information */}
                 <div className="space-y-4">
                   <h2 className="text-lg font-serif">Contact Information</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <input
                         type="text"
@@ -527,7 +545,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       onChange={(e) => setAddress({ ...address, apartment: e.target.value })}
                       className="w-full px-4 py-4 bg-background border border-border focus:border-primary focus:outline-none"
                     />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <input
                           type="text"
@@ -599,6 +617,12 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                   </div>
                 )}
 
+                {errors.minOrder && (
+                  <div className="p-4 border border-amber-500/30 bg-amber-500/5 text-amber-400 text-sm">
+                    {errors.minOrder}
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     if (validateDetails()) setStep("payment");
@@ -642,7 +666,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                 </div>
 
                 {/* Payment Method */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => setPaymentMethod("card")}
                     className={`p-6 border text-left transition-all ${
@@ -688,7 +712,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       />
                       {errors.cardNumber && <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <input
                           type="text"
@@ -786,12 +810,24 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
 
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {items.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span>
-                      <span className="text-foreground-muted">{item.quantity}x</span>
-                      <span className="ml-2">{item.name}</span>
-                    </span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                  <div key={item.cartKey} className="text-sm">
+                    <div className="flex justify-between">
+                      <span>
+                        <span className="text-foreground-muted">{item.quantity}x</span>
+                        <span className="ml-2">{item.name}</span>
+                      </span>
+                      <span>${(item.unit_price * item.quantity).toFixed(2)}</span>
+                    </div>
+                    {item.modifiers.length > 0 && (
+                      <p className="text-xs text-foreground-muted mt-0.5 ml-6">
+                        {item.modifiers.map((m) => m.option_name).join(", ")}
+                      </p>
+                    )}
+                    {item.special_instructions && (
+                      <p className="text-xs text-foreground-muted/60 mt-0.5 ml-6 italic">
+                        &ldquo;{item.special_instructions}&rdquo;
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

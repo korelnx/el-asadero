@@ -56,33 +56,77 @@ export async function POST(request: Request) {
 
     // Insert order items
     if (items?.length) {
+      type OrderItemInput = {
+        menu_item_id?: string;
+        item_name: string;
+        item_description?: string;
+        base_price: number;
+        quantity: number;
+        unit_price: number;
+        subtotal: number;
+        special_instructions?: string;
+        modifiers?: Array<{
+          modifier_group_id: string;
+          group_name: string;
+          modifier_option_id: string;
+          option_name: string;
+          price_delta: number;
+        }>;
+      };
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: itemsError } = await (supabase as any).from("order_items").insert(
-        items.map((item: {
-          menu_item_id?: string;
-          item_name: string;
-          item_description?: string;
-          base_price: number;
-          quantity: number;
-          unit_price: number;
-          subtotal: number;
-          special_instructions?: string;
-        }) => ({
-          order_id: order.id,
-          menu_item_id: item.menu_item_id ?? null,
-          item_name: item.item_name,
-          item_description: item.item_description ?? null,
-          base_price: item.base_price,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          subtotal: item.subtotal,
-          special_instructions: item.special_instructions ?? null,
-        }))
-      );
+      const { data: insertedItems, error: itemsError } = await (supabase as any)
+        .from("order_items")
+        .insert(
+          items.map((item: OrderItemInput) => ({
+            order_id: order.id,
+            menu_item_id: item.menu_item_id ?? null,
+            item_name: item.item_name,
+            item_description: item.item_description ?? null,
+            base_price: item.base_price,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            subtotal: item.subtotal,
+            special_instructions: item.special_instructions ?? null,
+          }))
+        )
+        .select("id");
 
       if (itemsError) {
         console.error("Order items insert error:", itemsError);
-        // Order was created — don't fail the whole request
+      }
+
+      // Insert modifiers for each item
+      if (insertedItems?.length) {
+        const modifierRows: Array<{
+          order_item_id: string;
+          modifier_option_id: string | null;
+          group_name: string;
+          option_name: string;
+          price_delta: number;
+        }> = [];
+
+        items.forEach((item: OrderItemInput, idx: number) => {
+          const orderItemId = insertedItems[idx]?.id;
+          if (!orderItemId || !item.modifiers?.length) return;
+          for (const mod of item.modifiers) {
+            modifierRows.push({
+              order_item_id: orderItemId,
+              modifier_option_id: mod.modifier_option_id ?? null,
+              group_name: mod.group_name,
+              option_name: mod.option_name,
+              price_delta: mod.price_delta,
+            });
+          }
+        });
+
+        if (modifierRows.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { error: modErr } = await (supabase as any)
+            .from("order_item_modifiers")
+            .insert(modifierRows);
+          if (modErr) console.error("Order modifiers insert error:", modErr);
+        }
       }
     }
 

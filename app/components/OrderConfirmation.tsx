@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface OrderConfirmationProps {
   orderNumber: string;
   onClose: () => void;
@@ -30,11 +32,18 @@ export default function OrderConfirmation({ orderNumber, onClose }: OrderConfirm
           </div>
 
           <p className="text-sm text-foreground-muted text-center">
-            Show this number when picking up, or track your delivery status.
+            Show this number when picking up, or track your order status below.
           </p>
         </div>
 
-        <div className="p-6 pt-0">
+        <div className="p-6 pt-0 space-y-3">
+          <Link
+            href={`/track?order_number=${orderNumber}`}
+            onClick={onClose}
+            className="block w-full py-3 border border-border hover:border-primary text-center text-sm transition-colors"
+          >
+            Track Order Status
+          </Link>
           <button
             onClick={onClose}
             className="w-full py-3 bg-primary hover:bg-primary-hover text-background font-medium transition-colors"
