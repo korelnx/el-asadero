@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useCart, type MenuItem } from "../context/CartContext";
 import { CATEGORIES, MENU_ITEMS } from "@/config/menu";
-import ItemModal from "./ItemModal";
 
-function MenuCard({ item, onCustomize }: { item: MenuItem; onCustomize: (item: MenuItem) => void }) {
+function MenuCard({ item, onAdd }: { item: MenuItem; onAdd: (item: MenuItem) => void }) {
   return (
     <div className="group bg-card border border-border hover:border-primary/30 transition-all">
       {item.image_url ? (
@@ -48,7 +47,7 @@ function MenuCard({ item, onCustomize }: { item: MenuItem; onCustomize: (item: M
           </div>
         )}
         <button
-          onClick={() => onCustomize(item)}
+          onClick={() => onAdd(item)}
           className="w-full border border-border hover:border-primary hover:bg-primary hover:text-background py-2.5 text-sm font-medium transition-all flex items-center justify-center gap-2"
         >
           <svg
@@ -74,8 +73,12 @@ function MenuCard({ item, onCustomize }: { item: MenuItem; onCustomize: (item: M
 
 export default function Menu() {
   const [activeCategory, setActiveCategory] = useState<string>(CATEGORIES[0].id);
-  const [modalItem, setModalItem] = useState<MenuItem | null>(null);
-  const { addItem } = useCart();
+  const { addItem, setIsOpen } = useCart();
+
+  const handleAdd = (item: MenuItem) => {
+    addItem(item, [], "");
+    setIsOpen(true);
+  };
 
   const filteredItems = MENU_ITEMS.filter((item) => item.category_id === activeCategory);
   const activeCat = CATEGORIES.find((c) => c.id === activeCategory);
@@ -121,23 +124,13 @@ export default function Menu() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredItems.map((item) => (
-                <MenuCard key={item.id} item={item} onCustomize={setModalItem} />
+                <MenuCard key={item.id} item={item} onAdd={handleAdd} />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {modalItem && (
-        <ItemModal
-          item={modalItem}
-          onClose={() => setModalItem(null)}
-          onAdd={(item, modifiers, specialInstructions) => {
-            addItem(item, modifiers, specialInstructions);
-            setModalItem(null);
-          }}
-        />
-      )}
     </>
   );
 }

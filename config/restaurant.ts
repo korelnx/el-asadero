@@ -6,20 +6,6 @@ export const locations = [
     phone: "(614) 626-0051",
     hours: "Mon–Thu 11am–10pm · Fri–Sat 11am–11pm · Sun 12pm–9pm",
   },
-  {
-    id: "columbus",
-    name: "Columbus",
-    address: "1234 High St, Columbus, OH 43215",
-    phone: "(614) 555-0199",
-    hours: "Mon–Thu 11am–10pm · Fri–Sat 11am–11pm · Sun 12pm–9pm",
-  },
-  {
-    id: "gahanna",
-    name: "Gahanna",
-    address: "890 Morse Rd, Gahanna, OH 43230",
-    phone: "(614) 555-0177",
-    hours: "Mon–Sun 11am–10pm",
-  },
 ];
 
 export const restaurant = {
@@ -49,10 +35,10 @@ export const restaurant = {
   ],
 
   hero: {
-    headline: "Discover Our Authentic",
-    headlineAccent: "Mexican Flavors",
+    headline: "Where Fire Meets",
+    headlineAccent: "Tradition.",
     subheading:
-      "From sizzling fajitas and birria to fresh seafood and hand-crafted cocktails — El Asadero brings the heart of Mexico straight to Reynoldsburg.",
+      "Slow-cooked meats, hand-pressed tortillas, and flavors that cross borders — El Asadero is Reynoldsburg's home for true Mexican cooking.",
     stats: [
       { value: "20+",   label: "Menu Categories"  },
       { value: "150+",  label: "Signature Dishes"  },
@@ -75,8 +61,8 @@ export const restaurant = {
   },
 
   cta: {
-    headline: "Ready to Experience",
-    headlineAccent: "El Asadero?",
+    headline: "Order Fresh.",
+    headlineAccent: "Today.",
     subheading: "Order online for pickup or give us a call. Fresh, authentic Mexican dishes ready for you.",
   },
 

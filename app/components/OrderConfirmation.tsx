@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface OrderConfirmationProps {
   orderNumber: string;
@@ -8,6 +8,13 @@ interface OrderConfirmationProps {
 }
 
 export default function OrderConfirmation({ orderNumber, onClose }: OrderConfirmationProps) {
+  const router = useRouter();
+
+  const handleDone = () => {
+    onClose();
+    router.push("/");
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" />
@@ -32,20 +39,13 @@ export default function OrderConfirmation({ orderNumber, onClose }: OrderConfirm
           </div>
 
           <p className="text-sm text-foreground-muted text-center">
-            Show this number when picking up, or track your order status below.
+            Show this number when picking up, or track your delivery status.
           </p>
         </div>
 
-        <div className="p-6 pt-0 space-y-3">
-          <Link
-            href={`/track?order_number=${orderNumber}`}
-            onClick={onClose}
-            className="block w-full py-3 border border-border hover:border-primary text-center text-sm transition-colors"
-          >
-            Track Order Status
-          </Link>
+        <div className="p-6 pt-0">
           <button
-            onClick={onClose}
+            onClick={handleDone}
             className="w-full py-3 bg-primary hover:bg-primary-hover text-background font-medium transition-colors"
           >
             Done

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus, OrderType, PaymentMethod } from "@/types/database";
+import { MENU_ITEMS } from "@/config/menu";
 
 interface OrderItem {
   id: string;
@@ -43,32 +44,95 @@ const STATUS_FLOW: Record<OrderStatus, OrderStatus | null> = {
 };
 
 const STATUS_META: Record<OrderStatus, { label: string; dot: string; badge: string; pulse?: boolean }> = {
-  new:            { label: "New",            dot: "bg-yellow-400", badge: "text-yellow-400 bg-yellow-400/10 ring-yellow-400/20", pulse: true  },
-  in_progress:    { label: "In Progress",    dot: "bg-orange-400", badge: "text-orange-400 bg-orange-400/10 ring-orange-400/20", pulse: true  },
-  ready:          { label: "Ready",          dot: "bg-primary",    badge: "text-primary bg-primary/10 ring-primary/20",          pulse: true  },
-  done:           { label: "Done",           dot: "bg-foreground-muted", badge: "text-foreground-muted bg-foreground-muted/10 ring-foreground-muted/20" },
-  cancelled:      { label: "Cancelled",      dot: "bg-foreground-muted", badge: "text-foreground-muted bg-foreground-muted/10 ring-foreground-muted/20" },
-  payment_failed: { label: "Payment Failed", dot: "bg-red-500",    badge: "text-red-400 bg-red-400/10 ring-red-400/20"                        },
+  new:            { label: "New",            dot: "bg-blue-400",    badge: "bg-blue-500 text-white",           pulse: true },
+  in_progress:    { label: "In Progress",    dot: "bg-amber-400",   badge: "bg-amber-500 text-white",          pulse: true },
+  ready:          { label: "Ready",          dot: "bg-emerald-400", badge: "bg-emerald-600 text-white",        pulse: true },
+  done:           { label: "Done",           dot: "bg-gray-400",    badge: "bg-gray-200 text-gray-600"                     },
+  cancelled:      { label: "Cancelled",      dot: "bg-gray-400",    badge: "bg-gray-200 text-gray-600"                     },
+  payment_failed: { label: "Payment Failed", dot: "bg-red-400",     badge: "bg-red-500 text-white"                         },
 };
 
-const FILTER_TABS: { label: string; value: OrderStatus | "all" }[] = [
-  { label: "All",         value: "all"         },
-  { label: "New",         value: "new"         },
-  { label: "In Progress", value: "in_progress" },
-  { label: "Ready",       value: "ready"       },
-  { label: "Done",        value: "done"        },
-  { label: "Cancelled",   value: "cancelled"   },
-];
+const STATUS_PRIORITY: Record<OrderStatus, number> = {
+  new: 0, in_progress: 1, ready: 2, done: 3, cancelled: 4, payment_failed: 5,
+};
 
 const ACTIVE_STATUSES: OrderStatus[] = ["new", "in_progress", "ready"];
 
 const IS_DEV = !process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL === "https://placeholder.supabase.co";
 
+// Build a mock order item from a real menu item id + quantity
+function mi(menuId: string, qty: number, idx: number): OrderItem {
+  const item = MENU_ITEMS.find(i => i.id === menuId)!;
+  return { id: `mi-${idx}`, item_name: item.name, quantity: qty, unit_price: item.price, subtotal: +(item.price * qty).toFixed(2) };
+}
+
+function buildMockOrders(): Order[] { const now = Date.now(); return [
+  {
+    id: "m1", order_number: "AP-2026-1041", status: "new", type: "pickup",
+    customer_name: "Marcus Rivera", customer_email: "marcus.rivera@gmail.com", customer_phone: "614-308-4471",
+    delivery_address: null, subtotal: 46.47, delivery_fee: 0, tax: 4.07, tip: 0, total: 50.54,
+    payment_method: "cash", stripe_payment_status: null, special_instructions: null,
+    created_at: new Date(now - 4 * 60000).toISOString(),
+    items: [
+      mi("app-1",  1, 1),  // Asadero Sampler     $24.99
+      mi("sf-2",   1, 2),  // Street Tacos (3)    $15.99
+      mi("dip-5",  1, 3),  // Cheese Dip           $5.49
+    ],
+  },
+  {
+    id: "m2", order_number: "AP-2026-1040", status: "in_progress", type: "delivery",
+    customer_name: "Sofia Mendez", customer_email: "sofia.m@email.com", customer_phone: "614-774-9902",
+    delivery_address: { street: "288 Brice Rd", city: "Reynoldsburg" }, subtotal: 73.46, delivery_fee: 4.99, tax: 6.43, tip: 6.00, total: 90.88,
+    payment_method: "stripe", stripe_payment_status: "succeeded", special_instructions: "Leave at door",
+    created_at: new Date(now - 22 * 60000).toISOString(),
+    items: [
+      mi("faj-6",  1, 4),  // Flaming Cheese Fajitas  $27.99
+      mi("bur-1",  2, 5),  // Asadero Burrito ×2      $39.98
+      mi("dip-6",  1, 6),  // Guacamole Dip            $5.49
+    ],
+  },
+  {
+    id: "m3", order_number: "AP-2026-1039", status: "ready", type: "pickup",
+    customer_name: "James Okafor", customer_email: "j.okafor@gmail.com", customer_phone: "614-512-3388",
+    delivery_address: null, subtotal: 61.97, delivery_fee: 0, tax: 5.42, tip: 0, total: 67.39,
+    payment_method: "stripe", stripe_payment_status: "succeeded", special_instructions: null,
+    created_at: new Date(now - 41 * 60000).toISOString(),
+    items: [
+      mi("mw-17",  1, 7),  // El Asadero Molcajete  $33.99
+      mi("sf-4",   1, 8),  // Bone Marrow Taco (3)  $21.99
+      mi("app-9",  1, 9),  // Mexican Corn           $5.99
+    ],
+  },
+  {
+    id: "m4", order_number: "AP-2026-1038", status: "done", type: "delivery",
+    customer_name: "Aisha Thompson", customer_email: "aisha.t@hotmail.com", customer_phone: "614-889-6640",
+    delivery_address: { street: "1450 Gender Rd", city: "Reynoldsburg" }, subtotal: 55.97, delivery_fee: 4.99, tax: 4.90, tip: 5.00, total: 70.86,
+    payment_method: "stripe", stripe_payment_status: "succeeded", special_instructions: null,
+    created_at: new Date(now - 95 * 60000).toISOString(),
+    items: [
+      mi("nac-6",  1, 10), // Fiesta Nachos         $20.99
+      mi("bur-5",  1, 11), // King Kong Burrito     $21.99
+      mi("app-10", 1, 12), // Table Side Guacamole  $12.99
+    ],
+  },
+  {
+    id: "m5", order_number: "AP-2026-1037", status: "done", type: "pickup",
+    customer_name: "Carlos Vega", customer_email: "c.vega@email.com", customer_phone: "614-201-7753",
+    delivery_address: null, subtotal: 43.97, delivery_fee: 0, tax: 3.85, tip: 0, total: 47.82,
+    payment_method: "cash", stripe_payment_status: null, special_instructions: "Extra hot sauce please",
+    created_at: new Date(now - 3 * 3600000).toISOString(),
+    items: [
+      mi("faj-7",  1, 13), // Parrillada       $31.99
+      mi("app-9",  2, 14), // Mexican Corn ×2  $11.98
+    ],
+  },
+]; }
+
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [filter, setFilter] = useState<OrderStatus | "all">("all");
+  const [orders, setOrders] = useState<Order[]>(() => IS_DEV ? buildMockOrders() : []);
   const [loading, setLoading] = useState(!IS_DEV);
+  const [refreshing, setRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
@@ -115,6 +179,10 @@ export default function OrdersPage() {
   async function advanceStatus(order: Order) {
     const next = STATUS_FLOW[order.status];
     if (!next) return;
+    if (IS_DEV) {
+      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: next } : o));
+      return;
+    }
     setUpdatingId(order.id);
     await fetch("/api/admin/orders", {
       method: "PATCH",
@@ -127,6 +195,10 @@ export default function OrdersPage() {
 
   async function cancelOrder(order: Order) {
     if (!confirm(`Cancel order ${order.order_number}?`)) return;
+    if (IS_DEV) {
+      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "cancelled" } : o));
+      return;
+    }
     setUpdatingId(order.id);
     await fetch("/api/admin/orders", {
       method: "PATCH",
@@ -137,68 +209,38 @@ export default function OrdersPage() {
     setUpdatingId(null);
   }
 
-  const filtered = filter === "all" ? orders : orders.filter(o => o.status === filter);
   const today = new Date().toDateString();
   const todayOrders = orders.filter(o => new Date(o.created_at).toDateString() === today);
-  const todayRevenue = todayOrders.filter(o => !["cancelled","payment_failed"].includes(o.status)).reduce((s, o) => s + o.total, 0);
   const activeCount = orders.filter(o => ACTIVE_STATUSES.includes(o.status)).length;
+
+  const activeOrders = orders
+    .filter(o => ACTIVE_STATUSES.includes(o.status))
+    .sort((a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status] || new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  const resolvedOrders = orders
+    .filter(o => !ACTIVE_STATUSES.includes(o.status))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="flex flex-col h-screen">
-      {IS_DEV && (
-        <div className="flex-shrink-0 px-8 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-          Dev mode — Supabase not connected. No data will load.
-        </div>
-      )}
       {/* Header */}
       <div className="flex-shrink-0 h-16 border-b border-border flex items-center justify-between px-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-serif">Orders</h1>
-        </div>
+        <h1 className="text-lg font-serif">Orders</h1>
         <button
-          onClick={fetchOrders}
-          className="text-xs text-foreground-muted hover:text-primary transition-colors flex items-center gap-1.5"
+          onClick={async () => { setRefreshing(true); await fetchOrders(); setRefreshing(false); }}
+          disabled={refreshing}
+          className="text-xs text-foreground-muted hover:text-primary transition-colors flex items-center gap-1.5 disabled:opacity-50"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 
       {/* Stats */}
-      <div className="flex-shrink-0 grid grid-cols-3 border-b border-border">
+      <div className="flex-shrink-0 grid grid-cols-2 border-b border-border">
         <Stat label="Today's Orders" value={todayOrders.length.toString()} />
-        <Stat label="Today's Revenue" value={`$${todayRevenue.toFixed(2)}`} border />
         <Stat label="Active" value={activeCount.toString()} border highlight={activeCount > 0} />
-      </div>
-
-      {/* Filter tabs */}
-      <div className="flex-shrink-0 flex border-b border-border overflow-x-auto">
-        {FILTER_TABS.map(tab => {
-          const count = tab.value === "all" ? null : orders.filter(o => o.status === tab.value).length;
-          return (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className={`px-5 py-3.5 text-xs font-medium tracking-wide whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
-                filter === tab.value
-                  ? "border-primary text-primary"
-                  : "border-transparent text-foreground-muted hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-              {count != null && count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                  filter === tab.value ? "bg-primary/20 text-primary" : "bg-foreground-muted/10 text-foreground-muted"
-                }`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
       </div>
 
       {/* Orders list */}
@@ -211,7 +253,7 @@ export default function OrdersPage() {
             </svg>
             Loading orders…
           </div>
-        ) : filtered.length === 0 ? (
+        ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-foreground-muted text-sm gap-2">
             <svg className="w-8 h-8 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -219,19 +261,41 @@ export default function OrdersPage() {
             No orders
           </div>
         ) : (
-          <div className="divide-y divide-border">
-            {filtered.map(order => (
-              <OrderRow
-                key={order.id}
-                order={order}
-                expanded={expandedId === order.id}
-                isNew={newOrderIds.has(order.id)}
-                onToggle={() => setExpandedId(expandedId === order.id ? null : order.id)}
-                onAdvance={() => advanceStatus(order)}
-                onCancel={() => cancelOrder(order)}
-                updating={updatingId === order.id}
-              />
-            ))}
+          <div>
+            {activeOrders.length > 0 && (
+              <div>
+                <div className="px-8 py-2.5 bg-background-secondary border-b border-border flex items-center gap-2">
+                  <span className="text-xs font-medium text-foreground uppercase tracking-widest">Active</span>
+                  <span className="text-xs bg-foreground/10 text-foreground px-1.5 py-0.5 rounded-full font-medium">{activeOrders.length}</span>
+                </div>
+                <div className="divide-y divide-border">
+                  {activeOrders.map(order => (
+                    <OrderRow key={order.id} order={order} expanded={expandedId === order.id}
+                      isNew={newOrderIds.has(order.id)}
+                      onToggle={() => setExpandedId(expandedId === order.id ? null : order.id)}
+                      onAdvance={() => advanceStatus(order)} onCancel={() => cancelOrder(order)}
+                      updating={updatingId === order.id} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {resolvedOrders.length > 0 && (
+              <div>
+                <div className="px-8 py-2.5 bg-background-secondary border-y border-border flex items-center gap-2">
+                  <span className="text-xs font-medium text-foreground-muted uppercase tracking-widest">Completed</span>
+                  <span className="text-xs bg-foreground-muted/10 text-foreground-muted px-1.5 py-0.5 rounded-full font-medium">{resolvedOrders.length}</span>
+                </div>
+                <div className="divide-y divide-border">
+                  {resolvedOrders.map(order => (
+                    <OrderRow key={order.id} order={order} expanded={expandedId === order.id}
+                      isNew={newOrderIds.has(order.id)}
+                      onToggle={() => setExpandedId(expandedId === order.id ? null : order.id)}
+                      onAdvance={() => advanceStatus(order)} onCancel={() => cancelOrder(order)}
+                      updating={updatingId === order.id} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -249,11 +313,71 @@ function Stat({ label, value, border, highlight }: { label: string; value: strin
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
-  const meta = STATUS_META[status];
+  const configs: Record<OrderStatus, { label: string; cls: string; icon: ReactNode }> = {
+    new: {
+      label: "New",
+      cls: "bg-blue-500/15 text-blue-300 ring-1 ring-blue-500/40",
+      icon: (
+        <span className="relative flex h-2 w-2 flex-shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-400" />
+        </span>
+      ),
+    },
+    in_progress: {
+      label: "In Progress",
+      cls: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40",
+      icon: (
+        <span className="relative flex h-2 w-2 flex-shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+        </span>
+      ),
+    },
+    ready: {
+      label: "Ready",
+      cls: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40",
+      icon: (
+        <span className="relative flex h-2 w-2 flex-shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        </span>
+      ),
+    },
+    done: {
+      label: "Done",
+      cls: "bg-white/5 text-white/40 ring-1 ring-white/10",
+      icon: (
+        <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ),
+    },
+    cancelled: {
+      label: "Cancelled",
+      cls: "bg-white/5 text-white/30 ring-1 ring-white/10",
+      icon: (
+        <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ),
+    },
+    payment_failed: {
+      label: "Payment Failed",
+      cls: "bg-red-500/15 text-red-400 ring-1 ring-red-500/40",
+      icon: (
+        <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H2.645c-1.73 0-2.813-1.874-1.948-3.374L10.052 3.378c.866-1.5 3.032-1.5 3.898 0L21.303 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      ),
+    },
+  };
+
+  const { label, cls, icon } = configs[status];
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ring-1 ${meta.badge}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot} ${meta.pulse ? "animate-pulse" : ""}`} />
-      {meta.label}
+    <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${cls}`}>
+      {icon}
+      {label}
     </span>
   );
 }
@@ -275,76 +399,60 @@ function OrderRow({
   const dateStr = time.toLocaleDateString([], { month: "short", day: "numeric" });
   const isToday = time.toDateString() === new Date().toDateString();
   const isActive = ACTIVE_STATUSES.includes(order.status);
-
-  const isDimmed = order.status === "done" || order.status === "cancelled" || order.status === "payment_failed";
+  const elapsedMins = Math.floor((Date.now() - time.getTime()) / 60000);
+  const isDone = order.status === "done";
+  const isCancelled = order.status === "cancelled" || order.status === "payment_failed";
 
   return (
     <div className={`transition-all duration-500 ${
-      isNew ? "bg-primary/5" : expanded ? "bg-card" : "hover:bg-card/40"
-    } ${isDimmed ? "opacity-60 hover:opacity-80" : ""}`}>
-      <div
-        className="flex items-center gap-4 px-8 py-5 cursor-pointer"
-        onClick={onToggle}
-      >
-        {/* Alert dot for orders needing attention */}
+      isNew ? "bg-primary/5" :
+      isCancelled ? "bg-background-secondary/60" :
+      expanded ? "bg-card" : "hover:bg-card/40"
+    }`}>
+      <div className="flex items-center gap-4 px-8 py-5 cursor-pointer" onClick={onToggle}>
+        {/* Status indicator */}
         <div className="w-4 flex-shrink-0 flex items-center justify-center">
-          {order.status === "new" ? (
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-400" />
-            </span>
+          {isDone ? (
+            <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : isCancelled ? (
+            <svg className="w-4 h-4 text-foreground-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           ) : (
-            <div className={`w-0.5 h-8 rounded-full transition-colors ${
-              isActive ? STATUS_META[order.status].dot : "bg-border"
-            }`} />
+            <span className={`w-2 h-2 rounded-full ${STATUS_META[order.status].dot}`} />
           )}
         </div>
 
-        {/* Order # + time */}
-        <div className="w-28 flex-shrink-0">
-          <p className="text-xs font-mono text-foreground-muted">{order.order_number}</p>
-          <p className="text-xs text-foreground-muted/60 mt-0.5">{isToday ? timeStr : dateStr}</p>
+        {/* Time + order # */}
+        <div className="w-24 flex-shrink-0">
+          <p className={`text-sm font-semibold tabular-nums ${isCancelled ? "text-foreground-muted/40" : "text-foreground"}`}>
+            {isActive && elapsedMins < 60
+              ? (elapsedMins < 1 ? "just now" : `${elapsedMins}m ago`)
+              : (isToday ? timeStr : dateStr)}
+          </p>
+          <p className={`text-xs mt-0.5 ${isCancelled ? "text-foreground-muted/30 line-through" : "text-foreground-muted"}`}>
+            #{parseInt(order.order_number.split("-").at(-1) ?? "0", 10)}
+          </p>
         </div>
 
-        {/* Customer with avatar */}
-        <div className="w-40 flex-shrink-0 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-primary/15 border border-primary/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-medium text-primary">
-              {order.customer_name.split(" ").map(n => n[0]).slice(0, 2).join("")}
-            </span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate leading-tight">{order.customer_name}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              {order.type === "delivery" ? (
-                <svg className="w-2.5 h-2.5 text-foreground-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-              ) : (
-                <svg className="w-2.5 h-2.5 text-foreground-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16" />
-                </svg>
-              )}
-              <span className="text-xs text-foreground-muted capitalize">{order.type}</span>
-            </div>
-          </div>
+        {/* Customer */}
+        <div className="w-36 flex-shrink-0 min-w-0">
+          <p className="text-sm font-medium truncate">{order.customer_name}</p>
+          <span className="text-xs text-foreground-muted capitalize">{order.type}</span>
         </div>
 
-        {/* Items — the star of the row */}
+        {/* Items */}
         <div className="flex-1 min-w-0 flex flex-wrap gap-1.5 items-center">
           {order.items.slice(0, 3).map(item => (
-            <span
-              key={item.id}
-              className="inline-flex items-center gap-1 text-xs bg-card border border-border px-2 py-1 max-w-[180px]"
-            >
+            <span key={item.id} className="inline-flex items-center gap-1 text-xs bg-card border border-border px-2 py-1 max-w-[180px]">
               <span className="text-primary font-semibold flex-shrink-0">{item.quantity}×</span>
               <span className="text-foreground truncate">{item.item_name}</span>
             </span>
           ))}
           {order.items.length > 3 && (
-            <span className="text-xs text-foreground-muted border border-border px-2 py-1">
-              +{order.items.length - 3} more
-            </span>
+            <span className="text-xs text-foreground-muted border border-border px-2 py-1">+{order.items.length - 3} more</span>
           )}
           {order.items.length === 0 && (
             <span className="text-xs text-foreground-muted/40 italic">No items</span>
@@ -354,43 +462,16 @@ function OrderRow({
         {/* Total */}
         <div className="w-24 flex-shrink-0 text-right">
           <p className="text-base font-semibold">${order.total.toFixed(2)}</p>
-          <p className="text-xs text-foreground-muted capitalize mt-0.5">{order.payment_method}</p>
         </div>
 
-        {/* Quick action + status */}
-        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-          {nextStatus ? (
-            <button
-              onClick={onAdvance}
-              disabled={updating}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 font-medium border transition-colors disabled:opacity-40 ${
-                nextStatus === "done"
-                  ? "border-green-500/40 text-green-400 hover:bg-green-400/10"
-                  : nextStatus === "ready"
-                  ? "border-primary/40 text-primary hover:bg-primary/10"
-                  : "border-border text-foreground-muted hover:border-foreground-muted hover:text-foreground"
-              }`}
-            >
-              {updating ? (
-                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <span className={`w-1.5 h-1.5 rounded-full ${STATUS_META[nextStatus].dot}`} />
-              )}
-              {STATUS_META[nextStatus].label}
-            </button>
-          ) : (
-            <StatusBadge status={order.status} />
-          )}
+        {/* Status badge */}
+        <div className="flex-shrink-0">
+          <StatusBadge status={order.status} />
         </div>
 
         {/* Chevron */}
-        <svg
-          className={`w-4 h-4 text-foreground-muted flex-shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
+        <svg className={`w-4 h-4 text-foreground-muted flex-shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
@@ -450,19 +531,17 @@ function OrderRow({
               </div>
             </div>
 
-            {/* Payment + notes */}
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-foreground-muted uppercase tracking-widest mb-3">Payment</p>
-                <p className="text-sm capitalize">{order.payment_method}</p>
-                {order.stripe_payment_status && (
-                  <p className="text-xs text-foreground-muted capitalize mt-0.5">{order.stripe_payment_status}</p>
-                )}
-              </div>
+            {/* Payment */}
+            <div>
+              <p className="text-xs text-foreground-muted uppercase tracking-widest mb-3">Payment</p>
+              <p className="text-sm capitalize">{order.payment_method}</p>
+              {order.stripe_payment_status && (
+                <p className="text-xs text-foreground-muted capitalize mt-0.5">{order.stripe_payment_status}</p>
+              )}
               {order.special_instructions && (
-                <div>
-                  <p className="text-xs text-foreground-muted uppercase tracking-widest mb-2">Instructions</p>
-                  <p className="text-sm text-foreground-muted italic">"{order.special_instructions}"</p>
+                <div className="mt-4">
+                  <p className="text-xs text-foreground-muted uppercase tracking-widest mb-1">Note</p>
+                  <p className="text-sm text-foreground-muted">{order.special_instructions}</p>
                 </div>
               )}
             </div>
@@ -486,8 +565,7 @@ function OrderRow({
                   </>
                 ) : (
                   <>
-                    <span className={`w-1.5 h-1.5 rounded-full ${STATUS_META[nextStatus].dot}`} />
-                    Mark as {STATUS_META[nextStatus].label}
+                    {({ in_progress: "Start Order", ready: "Mark Ready", done: "Complete" } as Record<string, string>)[nextStatus] ?? `Mark as ${STATUS_META[nextStatus].label}`}
                   </>
                 )}
               </button>

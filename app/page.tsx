@@ -87,7 +87,7 @@ export default function Home() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-1.5 h-1.5 rotate-45 bg-accent" />
-                      <span className="text-accent text-xs font-medium tracking-widest uppercase">Order Today</span>
+                      <span className="text-accent text-xs font-medium tracking-widest uppercase">Pickup & Go</span>
                     </div>
                     <h2 className="text-4xl md:text-5xl font-light leading-tight">
                       {cta.headline}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { MENU_ITEMS as CONFIG_ITEMS, CATEGORIES as CONFIG_CATS } from "@/config/menu";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -627,9 +628,21 @@ function ConfirmModal({
 const IS_DEV = !process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL === "https://placeholder.supabase.co";
 
+const MOCK_CATEGORIES: Category[] = CONFIG_CATS.map(c => ({
+  ...c,
+  is_active: true,
+}));
+
+const MOCK_ITEMS: MenuItem[] = CONFIG_ITEMS.map((item, i) => ({
+  ...item,
+  image_path: null,
+  is_available: true,
+  display_order: i + 1,
+}));
+
 export default function MenuPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>(IS_DEV ? MOCK_CATEGORIES : []);
+  const [items, setItems] = useState<MenuItem[]>(IS_DEV ? MOCK_ITEMS : []);
   const [loading, setLoading] = useState(!IS_DEV);
   const [selectedCatId, setSelectedCatId] = useState<string | "all">("all");
 
@@ -746,12 +759,6 @@ export default function MenuPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      {IS_DEV && (
-        <div className="flex-shrink-0 px-8 py-2 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-xs flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-          Dev mode — Supabase not connected. No data will load.
-        </div>
-      )}
       {/* Header */}
       <div className="flex-shrink-0 h-16 border-b border-border flex items-center justify-between px-8">
         <h1 className="text-lg font-serif">Menu</h1>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
-import { useLocation } from "../context/LocationContext";
 import { createClient } from "@/lib/supabase/client";
 import { restaurant, locations } from "@/config/restaurant";
 
@@ -30,19 +29,13 @@ interface CheckoutProps {
 }
 
 type AuthMode = "guest" | "login";
-type CheckoutStep = "location" | "auth" | "details" | "payment";
+type CheckoutStep = "auth" | "details" | "payment";
 
 export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   const { items, totalPrice, clearCart } = useCart();
-  const { selected: selectedLocation, setSelected: setSelectedLocation } = useLocation();
-  const [pickedLocation, setPickedLocation] = useState(selectedLocation ?? locations[0]);
+  const pickedLocation = locations[0];
 
-  function handlePickLocation(loc: typeof locations[number]) {
-    setPickedLocation(loc);
-    setSelectedLocation(loc);
-  }
-
-  const [step, setStep] = useState<CheckoutStep>("location");
+  const [step, setStep] = useState<CheckoutStep>("auth");
   const [orderType, setOrderType] = useState<OrderType>("delivery");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -102,8 +95,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
         email: user.email ?? "",
         phone: profile?.phone ?? "",
       });
-      // Still show location step first — skip only auth
-      setStep(prev => prev === "location" ? "location" : "details");
+      setStep("details");
     });
   }, []);
 
@@ -166,9 +158,17 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
   };
 
   const handlePlaceOrder = async () => {
-    // Skip card validation for now (Stripe comes later)
     setIsProcessing(true);
 
+    // Mock order completion
+    await new Promise((r) => setTimeout(r, 1600));
+    const mockNumber = `AP-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+    clearCart();
+    setIsProcessing(false);
+    onOrderComplete(mockNumber);
+    return;
+
+    // eslint-disable-next-line no-unreachable
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -271,9 +271,9 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
 
             {/* Step indicator */}
             <div className="flex items-center gap-2">
-              {(["location", "auth", "details", "payment"] as CheckoutStep[]).map((s, i) => {
-                const labels = ["Location", "Account", "Details", "Payment"];
-                const stepIndex = ["location", "auth", "details", "payment"].indexOf(step);
+              {(["auth", "details", "payment"] as CheckoutStep[]).map((s, i) => {
+                const labels = ["Account", "Details", "Payment"];
+                const stepIndex = ["auth", "details", "payment"].indexOf(step);
                 const isActive = s === step;
                 const isDone = i < stepIndex;
                 return (
@@ -284,59 +284,11 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       </span>
                       <span className="hidden sm:inline">{labels[i]}</span>
                     </div>
-                    {i < 3 && <div className={`h-px w-6 transition-colors ${isDone ? "bg-primary" : "bg-border"}`} />}
+                    {i < 2 && <div className={`h-px w-6 transition-colors ${isDone ? "bg-primary" : "bg-border"}`} />}
                   </div>
                 );
               })}
             </div>
-
-            {/* Location Step */}
-            {step === "location" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-serif mb-2">Choose a Location</h1>
-                  <p className="text-foreground-muted">Select the El Asadero nearest to you</p>
-                </div>
-
-                <div className="space-y-3">
-                  {locations.map(loc => (
-                    <button
-                      key={loc.id}
-                      onClick={() => handlePickLocation(loc)}
-                      className={`w-full text-left p-5 border transition-all flex items-start gap-4 ${
-                        pickedLocation.id === loc.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-foreground-muted"
-                      }`}
-                    >
-                      <div className={`w-10 h-10 flex items-center justify-center flex-shrink-0 mt-0.5 ${pickedLocation.id === loc.id ? "bg-primary/10" : "bg-card"}`}>
-                        <svg className={`h-5 w-5 ${pickedLocation.id === loc.id ? "text-primary" : "text-foreground-muted"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium">{loc.name}</p>
-                        <p className="text-sm text-foreground-muted mt-0.5">{loc.address}</p>
-                        <p className="text-xs text-foreground-muted/50 mt-0.5">{loc.hours}</p>
-                      </div>
-                      {pickedLocation.id === loc.id && (
-                        <svg className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setStep("auth")}
-                  className="w-full bg-primary hover:bg-primary-hover text-background py-4 font-medium transition-colors"
-                >
-                  Continue — {pickedLocation.name}
-                </button>
-              </div>
-            )}
 
             {/* Auth Step */}
             {step === "auth" && (
@@ -421,7 +373,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          setCustomer({ firstName: "Test", lastName: "User", email: "test@example.com", phone: "555-867-5309" });
+                          setCustomer({ firstName: "Marcus", lastName: "Rivera", email: "marcus.rivera@gmail.com", phone: "614-308-4471" });
                           setOrderType("delivery");
                           setAddress({ street: "123 Main St", apartment: "Apt 4B", city: "San Francisco", zipCode: "94103", instructions: "Leave at door" });
                         }}
@@ -432,7 +384,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                       <button
                         type="button"
                         onClick={() => {
-                          setCustomer({ firstName: "Test", lastName: "User", email: "test@example.com", phone: "555-867-5309" });
+                          setCustomer({ firstName: "Marcus", lastName: "Rivera", email: "marcus.rivera@gmail.com", phone: "614-308-4471" });
                           setOrderType("pickup");
                           setAddress({ street: "", apartment: "", city: "", zipCode: "", instructions: "" });
                         }}
@@ -579,41 +531,18 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
 
                 {/* Pickup Location */}
                 {orderType === "pickup" && (
-                  <div className="space-y-3">
-                    <h2 className="text-lg font-serif">Choose Pickup Location</h2>
-                    {locations.map(loc => (
-                      <button
-                        key={loc.id}
-                        onClick={() => handlePickLocation(loc)}
-                        className={`w-full text-left p-5 border transition-all flex items-start gap-4 ${
-                          pickedLocation.id === loc.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-foreground-muted"
-                        }`}
-                      >
-                        <div className={`w-10 h-10 flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          pickedLocation.id === loc.id ? "bg-primary/10" : "bg-card"
-                        }`}>
-                          <svg className={`h-5 w-5 ${pickedLocation.id === loc.id ? "text-primary" : "text-foreground-muted"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{loc.name}</p>
-                          <p className="text-sm text-foreground-muted mt-0.5">{loc.address}</p>
-                          <p className="text-xs text-foreground-muted/60 mt-0.5">{loc.hours}</p>
-                          {pickedLocation.id === loc.id && (
-                            <p className="text-primary text-sm mt-2">Ready in 15–20 minutes</p>
-                          )}
-                        </div>
-                        {pickedLocation.id === loc.id && (
-                          <svg className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
+                  <div className="p-5 border border-border bg-card">
+                    <div className="flex items-start gap-4">
+                      <svg className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                      </svg>
+                      <div>
+                        <p className="font-medium">{pickedLocation.name}</p>
+                        <p className="text-sm text-foreground-muted mt-0.5">{pickedLocation.address}</p>
+                        <p className="text-xs text-foreground-muted/60 mt-0.5">{pickedLocation.hours}</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -648,7 +577,7 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                         type="button"
                         onClick={() => {
                           setPaymentMethod("card");
-                          setCardInfo({ number: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", name: "Test User" });
+                          setCardInfo({ number: "4242 4242 4242 4242", expiry: "12/28", cvc: "123", name: "Marcus Rivera" });
                         }}
                         className="text-xs px-3 py-1.5 border border-dashed border-primary/50 text-primary/70 hover:border-primary hover:text-primary transition-colors"
                       >
@@ -852,12 +781,8 @@ export default function Checkout({ onClose, onOrderComplete }: CheckoutProps) {
                 </div>
               </div>
 
-              {step !== "location" && (
+              {(
                 <div className="border-t border-border pt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-foreground-muted">Location</span>
-                    <button onClick={() => setStep("location")} className="text-primary hover:underline text-xs">{pickedLocation.name}</button>
-                  </div>
                   {step !== "auth" && customer.email && (
                     <div className="flex justify-between">
                       <span className="text-foreground-muted">Contact</span>
